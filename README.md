@@ -24,8 +24,13 @@ Everything runs in the browser on made-up data. There is no server and no Salesf
 | Phone | 390 × 844 | iPhone 14 |
 | Small phone | 360 × 800 | |
 
-**Rotate** swaps width and height for the tablet and phones. **Fit to window** scales the frame down so the whole
-screen is visible (the pages inside still see the true size); untick it for 100%.
+**Orientation** (Landscape / Portrait) applies to every size and stays selected as you change sizes, so you can
+step through Tablet → Phone → Small phone sideways, or look at a vertical 1080p monitor. It is remembered separately for
+the three desktop sizes and for the tablet/phones, so moving between the two groups brings back how you last held each one.
+**Fit to window** scales the frame down so the whole screen is visible (the pages inside still see the true size);
+untick it for 100%.
+
+**Keyboard:** <kbd>1</kbd>–<kbd>6</kbd> pick a size, <kbd>R</kbd> flips orientation, <kbd>F</kbd> toggles fit.
 
 The site's content area is capped at **1440px**, so on 1080p, 1440p and 4K the content stays 1440 wide and centred,
 with the sides shaded.

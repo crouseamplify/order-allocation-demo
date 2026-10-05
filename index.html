@@ -19,16 +19,16 @@ body {
     font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     /* screen size (width x height) for each option; --w/--h are what the frame uses */
     --bw: 1920px; --bh: 1080px; --bz: 10px; --br: 14px;
-    --w: var(--bw); --h: var(--bh);
+    /* natural size of each option is --bw x --bh; orientation decides which side runs across */
+    --w: max(var(--bw), var(--bh)); --h: min(var(--bw), var(--bh));
 }
 body:has(#sz-qhd:checked)  { --bw: 2560px; --bh: 1440px; }
 body:has(#sz-4k:checked)   { --bw: 3840px; --bh: 2160px; }
 body:has(#sz-tab:checked)  { --bw: 834px;  --bh: 1194px; --bz: 14px; --br: 38px; }   /* iPad Pro 11" */
 body:has(#sz-ph:checked)   { --bw: 390px;  --bh: 844px;  --bz: 12px; --br: 40px; }   /* iPhone 14 */
 body:has(#sz-sph:checked)  { --bw: 360px;  --bh: 800px;  --bz: 12px; --br: 40px; }   /* small Android */
-/* rotating swaps width and height, for tablet and phones only */
-body:has(#rotate:checked):has(.dev-size:checked) { --w: var(--bh); --h: var(--bw); }
-body:not(:has(.dev-size:checked)) #rotLabel { opacity: .4; pointer-events: none; }
+/* portrait puts the long side vertical, for any size (a tablet, a phone, even a vertical monitor) */
+body:has(#o-portrait:checked) { --w: min(var(--bw), var(--bh)); --h: max(var(--bw), var(--bh)); }
 
 /* ---------- control bar ---------- */
 .bar { position: sticky; top: 0; z-index: 10; background: #032d60; color: #fff; padding: .5rem 1rem; font-size: 13px; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.25rem; }
@@ -41,6 +41,8 @@ body:not(:has(.dev-size:checked)) #rotLabel { opacity: .4; pointer-events: none;
 .seg input:checked + label, .seg button.on { background: #fff; color: #032d60; font-weight: 600; }
 .seg input:focus-visible + label { outline: 2px solid #fff; outline-offset: -2px; }
 .seg label small { opacity: .7; margin-left: .25rem; font-weight: 400; }
+.keys { opacity: .65; font-size: 12px; }
+.keys kbd { font: inherit; border: 1px solid #5a7fb0; border-radius: 3px; padding: 0 .3rem; }
 .ctl { display: none; align-items: center; gap: .75rem; padding-left: 1.25rem; border-left: 1px solid #3d63a0; }
 body[data-page="orders"] .ctl-orders, body[data-page="manager"] .ctl-manager { display: inline-flex; }
 #readout { margin-left: auto; opacity: .85; }
@@ -71,8 +73,14 @@ body:has(#fit:checked) .frame { position: absolute; left: 50%; top: 16px; margin
             <input type="radio" name="sz" id="sz-sph" class="dev-size"><label for="sz-sph">Small phone<small>360×800</small></label>
         </span>
     </span>
-    <label id="rotLabel"><input type="checkbox" id="rotate"> Rotate</label>
+    <span class="group">Orientation
+        <span class="seg" role="radiogroup" aria-label="Orientation">
+            <input type="radio" name="or" id="o-landscape" checked><label for="o-landscape">▭ Landscape</label>
+            <input type="radio" name="or" id="o-portrait"><label for="o-portrait">▯ Portrait</label>
+        </span>
+    </span>
     <label><input type="checkbox" id="fit" checked> Fit to window <span id="scale"></span></label>
+    <span class="keys" title="Keyboard shortcuts"><kbd>1</kbd>–<kbd>6</kbd> size · <kbd>R</kbd> rotate · <kbd>F</kbd> fit</span>
 
     <span class="seg" id="pages" aria-label="Page">
         <button type="button" data-page="orders" class="on">1 · Manage Orders</button>
@@ -107,9 +115,14 @@ let page = 'orders';
 // ---- remember choices for this browser tab ----
 const KEY = 'oam-demo';
 const saved = (() => { try { return JSON.parse(sessionStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })();
-const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify({ sz: document.querySelector('input[name=sz]:checked').id, rotate: $('rotate').checked, fit: $('fit').checked, ctl })); } catch (e) {} };
+const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify({ sz: document.querySelector('input[name=sz]:checked').id, or: document.querySelector('input[name=or]:checked').id, lastOrient, fit: $('fit').checked, ctl })); } catch (e) {} };
+// Orientation is remembered separately for desktop-size screens and for tablet/phone sizes, so moving between
+// the two groups restores how you last held each one (desktops default to landscape, devices to portrait).
+const groupOf = id => $(id).classList.contains('dev-size') ? 'device' : 'desktop';
+const lastOrient = Object.assign({ desktop: 'o-landscape', device: 'o-portrait' }, saved.lastOrient || {});
 if (saved.sz && $(saved.sz)) $(saved.sz).checked = true;
-if (typeof saved.rotate === 'boolean') $('rotate').checked = saved.rotate;
+let curGroup = groupOf(document.querySelector('input[name=sz]:checked').id);
+$(saved.or && $(saved.or) ? saved.or : lastOrient[curGroup]).checked = true;
 if (typeof saved.fit === 'boolean') $('fit').checked = saved.fit;
 Object.assign(ctl, saved.ctl || {});
 $('ctl-displayMode').value = ctl.displayMode; $('ctl-lock').checked = ctl.lock; $('ctl-reason').value = ctl.lockReason; $('ctl-confirm').checked = ctl.confirmAll;
@@ -126,7 +139,24 @@ function fit() {
 window.addEventListener('resize', fit);
 const ask = () => setTimeout(() => app.contentWindow && app.contentWindow.postMessage({ src: 'oam-shell', type: 'query' }, '*'), 120);   // the page reports back which layout it chose
 window.addEventListener('resize', ask);
-document.addEventListener('change', e => { if (e.target.matches('input[name=sz], #rotate, #fit')) { fit(); save(); ask(); } });
+document.addEventListener('change', e => {
+    if (e.target.matches('input[name=sz]')) {                                   // moving between desktop sizes and device sizes
+        const g = groupOf(e.target.id);
+        if (g !== curGroup) { curGroup = g; $(lastOrient[g]).checked = true; }
+    }
+    if (e.target.matches('input[name=or]')) lastOrient[curGroup] = e.target.id;
+    if (e.target.matches('input[name=sz], input[name=or], #fit')) { fit(); save(); ask(); }
+});
+
+// ---- keyboard shortcuts: 1-6 pick a size, R flips orientation, F toggles fit ----
+const SIZE_IDS = ['sz-1080', 'sz-qhd', 'sz-4k', 'sz-tab', 'sz-ph', 'sz-sph'];
+document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey || (e.target.closest && e.target.closest('select, textarea, input[type=text], input[type=search], input[type=number]'))) return;
+    const k = e.key.toLowerCase();
+    if (k >= '1' && k <= '6') $(SIZE_IDS[+k - 1]).click();
+    else if (k === 'r') $(document.querySelector('input[name=or]:checked').id === 'o-landscape' ? 'o-portrait' : 'o-landscape').click();
+    else if (k === 'f') $('fit').click();
+});
 
 // ---- navigation inside the frame ----
 function go(p) { page = p; app.src = PAGES[p]; }
@@ -153,7 +183,7 @@ window.addEventListener('message', e => {
         replay(page);
     }
     if (m.type === 'layout') {
-        $('readout').textContent = m.w + '×' + m.h + ' · ' + m.view + (m.w > 1440 ? ' · content capped at 1440' : '');
+        $('readout').textContent = m.w + '×' + m.h + ' ' + (m.w >= m.h ? 'landscape' : 'portrait') + ' · ' + m.view + (m.w > 1440 ? ' · content capped at 1440' : '');
     }
 });
 fit();
