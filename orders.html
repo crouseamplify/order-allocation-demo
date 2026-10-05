@@ -167,7 +167,7 @@
     <!-- TABLE MODE (current behavior) -->
     <div id="tableMode" class="hidden"></div>
 
-    <p class="note">Cards are grouped into Open, Submitted, Processing and Shipped columns; Cancelled requests are excluded. Each program is shown as its own tag on the card. Cards are not draggable — status is driven by the order lifecycle, not by user action. In this demo every button and order number opens the Allocation Manager.</p>
+    <p class="note">Cards are grouped into Open, Submitted, Processing and Shipped columns; Cancelled requests are excluded. Each program is shown as its own tag on the card. Cards are not draggable — status is driven by the order lifecycle, not by user action. In this demo, Track Shipment opens the Shipment Status page and every other button and order number opens the Allocation Manager.</p>
 </div>
 
 <script>
@@ -237,7 +237,7 @@
     const lockMessage = o => `<b>${o.lockReason}.</b> Amplify is updating this order, so it is read-only for now.`;
 
     const actionButton = o => o.col === 'Shipped'
-        ? `<a class="slds-button slds-button_brand" href="manager.html">Track Shipment</a>`
+        ? `<a class="slds-button slds-button_brand" href="shipment-status.html">Track Shipment</a>`
         : o.lockReason
             ? '<a class="slds-button slds-button_neutral" href="manager.html">View Order</a>'
             : '<a class="slds-button slds-button_brand" href="manager.html">Manage Order</a>';

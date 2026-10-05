@@ -44,7 +44,7 @@ body:has(#o-portrait:checked) { --w: min(var(--bw), var(--bh)); --h: max(var(--b
 .keys { opacity: .65; font-size: 12px; }
 .keys kbd { font: inherit; border: 1px solid #5a7fb0; border-radius: 3px; padding: 0 .3rem; }
 .ctl { display: none; align-items: center; gap: .75rem; padding-left: 1.25rem; border-left: 1px solid #3d63a0; }
-body[data-page="orders"] .ctl-orders, body[data-page="manager"] .ctl-manager { display: inline-flex; }
+body[data-page="orders"] .ctl-orders, body[data-page="manager"] .ctl-manager, body[data-page="shipments"] .ctl-shipments { display: inline-flex; }
 #readout { margin-left: auto; opacity: .85; }
 
 /* ---------- stage and frame ---------- */
@@ -85,6 +85,7 @@ body:has(#fit:checked) .frame { position: absolute; left: 50%; top: 16px; margin
     <span class="seg" id="pages" aria-label="Page">
         <button type="button" data-page="orders" class="on">1 · Manage Orders</button>
         <button type="button" data-page="manager">2 · Allocation Manager</button>
+        <button type="button" data-page="shipments">3 · Shipment Status</button>
     </span>
 
     <span class="ctl ctl-orders">
@@ -98,6 +99,15 @@ body:has(#fit:checked) .frame { position: absolute; left: 50%; top: 16px; margin
         <label><input type="checkbox" id="ctl-confirm"> Confirm all allocations</label>
     </span>
 
+    <span class="ctl ctl-shipments">
+        <label>Version
+            <select id="ctl-ssVersion"><option value="new">New · first pass</option><option value="existing">Existing</option></select>
+        </label>
+        <label>Flow outcome
+            <select id="ctl-flow"><option value="ok">Order found</option><option value="invalid">Order not found</option><option value="error">Error</option></select>
+        </label>
+    </span>
+
     <span id="readout" aria-live="polite"></span>
 </div>
 
@@ -107,9 +117,9 @@ body:has(#fit:checked) .frame { position: absolute; left: 50%; top: 16px; margin
 
 <script>
 const $ = id => document.getElementById(id);
-const PAGES = { orders: 'orders.html', manager: 'manager.html' };
+const PAGES = { orders: 'orders.html', manager: 'manager.html', shipments: 'shipment-status.html' };
 const app = $('app'), frame = $('frame'), stage = $('stage'), bar = $('bar');
-const ctl = { displayMode: 'Card', lock: false, lockReason: 'Return in progress', confirmAll: false };
+const ctl = { displayMode: 'Card', lock: false, lockReason: 'Return in progress', confirmAll: false, ssVersion: 'new', flowOutcome: 'ok' };
 let page = 'orders';
 
 // ---- remember choices for this browser tab ----
@@ -125,7 +135,7 @@ let curGroup = groupOf(document.querySelector('input[name=sz]:checked').id);
 $(saved.or && $(saved.or) ? saved.or : lastOrient[curGroup]).checked = true;
 if (typeof saved.fit === 'boolean') $('fit').checked = saved.fit;
 Object.assign(ctl, saved.ctl || {});
-$('ctl-displayMode').value = ctl.displayMode; $('ctl-lock').checked = ctl.lock; $('ctl-reason').value = ctl.lockReason; $('ctl-confirm').checked = ctl.confirmAll;
+$('ctl-displayMode').value = ctl.displayMode; $('ctl-lock').checked = ctl.lock; $('ctl-reason').value = ctl.lockReason; $('ctl-confirm').checked = ctl.confirmAll; $('ctl-ssVersion').value = ctl.ssVersion; $('ctl-flow').value = ctl.flowOutcome;
 
 // ---- fit the frame to the window (the frame itself keeps its true CSS-pixel size) ----
 function fit() {
@@ -168,12 +178,15 @@ if (startPage && PAGES[startPage]) go(startPage);
 const send = (key, value) => app.contentWindow && app.contentWindow.postMessage({ src: 'oam-shell', type: 'set', key, value }, '*');
 const replay = p => {
     if (p === 'orders') send('displayMode', ctl.displayMode);
+    else if (p === 'shipments') { send('ssVersion', ctl.ssVersion); send('flowOutcome', ctl.flowOutcome); }
     else { send('lock', ctl.lock); send('lockReason', ctl.lockReason); send('confirmAll', ctl.confirmAll); }
 };
 $('ctl-displayMode').addEventListener('change', e => { ctl.displayMode = e.target.value; send('displayMode', ctl.displayMode); save(); ask(); });
 $('ctl-lock').addEventListener('change', e => { ctl.lock = e.target.checked; send('lock', ctl.lock); save(); });
 $('ctl-reason').addEventListener('change', e => { ctl.lockReason = e.target.value; send('lockReason', ctl.lockReason); save(); });
 $('ctl-confirm').addEventListener('change', e => { ctl.confirmAll = e.target.checked; send('confirmAll', ctl.confirmAll); save(); });
+$('ctl-ssVersion').addEventListener('change', e => { ctl.ssVersion = e.target.value; send('ssVersion', ctl.ssVersion); save(); ask(); });
+$('ctl-flow').addEventListener('change', e => { ctl.flowOutcome = e.target.value; send('flowOutcome', ctl.flowOutcome); save(); ask(); });
 
 window.addEventListener('message', e => {
     const m = e.data; if (!m || m.src !== 'oam' || e.source !== app.contentWindow) return;

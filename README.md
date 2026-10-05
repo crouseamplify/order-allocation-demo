@@ -10,8 +10,8 @@ Everything runs in the browser on made-up data. There is no server and no Salesf
 
 ## How it works
 
-`index.html` is a **shell**: a dark control bar above a device frame. The whole demo — **Manage Orders** and then the
-**Allocation Manager** — runs inside that frame, so you can click through it at any screen size.
+`index.html` is a **shell**: a dark control bar above a device frame. The whole demo — **Manage Orders**, the
+**Allocation Manager** and the **Shipment Status** page — runs inside that frame, so you can click through it at any screen size.
 
 ### Screen sizes (top bar → *Screen*)
 
@@ -40,11 +40,11 @@ with the sides shaded.
 The size buttons are plain radio inputs; `:has()` changes the frame size. Inside the frame each page uses CSS media
 queries against that size, so nothing is toggled by script:
 
-| Viewport width | Manage Orders | Allocation Manager |
-|---|---|---|
-| ≥ 1280 | Four status columns | Product × site grid |
-| 640 – 1279 | Two-up columns | Site list + product list (split) |
-| < 640 | One column with status tabs | Site dropdown / By product, stacked |
+| Viewport width | Manage Orders | Allocation Manager | Shipment Status (new) |
+|---|---|---|---|
+| ≥ 1280 | Four status columns | Product × site grid | Location list + deliveries |
+| 640 – 1279 | Two-up columns | Site list + product list (split) | Location list below 900, dropdown under it |
+| < 640 | One column with status tabs | Site dropdown / By product, stacked | Location dropdown, stacked cards |
 
 A phone held sideways (width ≥ 640, height ≤ 500) uses a tightened version of the split layout.
 
@@ -55,7 +55,8 @@ JavaScript only fits the frame to your window, remembers your choices for the ta
 - **Manage Orders:** `displayMode` — Card or Table.
 - **Allocation Manager:** *Amplify lock (read-only)* with a reason, and *Confirm all allocations* (Submit stays disabled until every site is Confirmed).
 - One product (Amplify ELA G7 Student Consumable Set) is deliberately over-allocated so the banner, the filter and the Submit error modal can be seen. Reduce its quantities to clear it.
-- Every button and order number on Manage Orders opens the Allocation Manager.
+- **Shipment Status:** *Version* (New · first pass, or Existing — the current page, for comparison) and *Flow outcome* (Order found, Order not found, Error).
+- On Manage Orders, **Track Shipment** opens the Shipment Status page; every other button and order number opens the Allocation Manager. The Shipment Status page shows the same sample quote whichever order you came from.
 
 You can also open `orders.html` or `manager.html` directly. They then follow your browser window's width and show their own small switch bar.
 
@@ -73,6 +74,7 @@ The pages load the same stylesheets the live portal serves (`assets/site-styles/
 index.html     Shell: device frame, screen-size selector, test switches
 orders.html    Step 1 · Manage Orders (Card / Table)
 manager.html   Step 2 · Allocation Manager (grid / split / stacked)
+shipment-status.html   Step 3 · Shipment Status (new design, with the existing page for comparison)
 assets/site-styles/   Portal stylesheets and theme variables
 .nojekyll      Tells GitHub Pages to serve the files as-is
 ```
