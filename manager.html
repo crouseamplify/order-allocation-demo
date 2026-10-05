@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" href="data:,">
 <title>Allocation Manager — Order Allocation Manager demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Site stylesheets, downloaded from the Amplify Customer Portal LWR site (see assets/site-styles) -->
 <link rel="stylesheet" href="assets/site-styles/salesforce-lightning-design-system.min.css">
 <link rel="stylesheet" href="assets/site-styles/dxp-site-spacing-styling-hooks.min.css">
@@ -891,41 +892,9 @@ body { margin: 0; background: var(--dxp-g-root); color: var(--dxp-g-root-contras
 .dev .sitecard .slds-button__icon{margin-right:.35rem;width:.875rem;height:.875rem}
 
 /* ---- Device layouts (Tablet / Mobile) ---- */
-body.device { background: #e9ecf1; min-height: 100vh; }
-#deviceWrap { display: flex; justify-content: center; padding: 1.5rem; }
-.dev-frame { border: 10px solid #1b1b1b; background: var(--dxp-g-root); overflow: hidden; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
-.dev-frame.mobile, .dev-frame.tablet { box-sizing: content-box; }
-.dev-frame.mobile { border-width: 12px; border-radius: 40px; }
-.dev-frame.mobile.portrait  { width: 390px;  height: 844px; }     /* iPhone 14-class base frame */
-.dev-frame.mobile.landscape { width: 844px;  height: 390px; }
-.dev-frame.tablet { border-width: 14px; border-radius: 38px; }   /* iPad Pro 11": screen area below, bezel = border */
-.dev-frame.tablet.portrait  { width: 834px;  height: 1194px; }
-.dev-frame.tablet.landscape { width: 1194px; height: 834px; }
-.dev-frame.tablet .dev { border-radius: 22px; overflow: hidden; }
-.dev-frame.tablet.landscape .dev .rail { width: 280px; }
-.dev-frame.mobile.landscape .dev .rail { width: 210px; }
-.dev-frame.mobile.landscape .dev .appbar { padding: .3rem var(--dxp-g-spacing-small); }
-.dev-frame.mobile.landscape .dev .footer { display: flex; align-items: center; gap: .75rem; padding: .4rem var(--dxp-g-spacing-small); }
-.dev-frame.mobile.landscape .dev .footer .hint { margin: 0; flex: 1; }
-.dev-frame.mobile.landscape .dev .footer .row { flex: none; width: 330px; }
-.dev-frame.mobile.landscape .dev .sitecard { padding: .5rem .75rem; margin-bottom: .5rem; }
-.dev-frame.mobile.landscape .dev .sitecard { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; }
-.dev-frame.mobile.landscape .dev .sitecard > div:first-child { flex: 1; }
-.dev-frame.mobile.landscape .dev .sitecard .meta { display: none; }                 /* address/contact live in Site Details */
-.dev-frame.mobile.landscape .dev .sitecard .slds-button { line-height: 1.75rem; padding: 0 .6rem; order: 2; }
-.dev-frame.mobile.landscape .dev .sitecard .totals { order: 3; width: 100%; margin-top: 0; }
-.dev-frame.mobile.landscape .dev .tablet-tools .slds-input, .dev-frame.mobile.landscape .dev .tablet-tools .slds-select { height: 1.75rem; line-height: 1.75rem; }
-.dev-frame.mobile.landscape .dev .tablet-tools { margin-bottom: .35rem; }
-.dev-frame.mobile.landscape .dev .scroll { padding-top: .35rem; padding-bottom: .35rem; }
-.dev-frame.mobile.landscape .dev .over, .dev-frame.mobile.landscape .dev .lockb { padding: .3rem .6rem; margin-bottom: .35rem; }
-.dev-frame.mobile.landscape .dev .tgrid { grid-template-columns: 1fr 56px 56px 150px; }
-.dev-frame.mobile.landscape .dev .stepper button { width: 36px; height: 36px; }
-.dev-frame.mobile.landscape .dev .stepper input { height: 36px; width: 46px; }
-.dev-frame.tablet.landscape .dev-sheet-w, .dev-frame.tablet.landscape .dev .sheet { width: 420px; }
 .dev { display: flex; flex-direction: column; height: 100%; position: relative; }
 .dev .lockb { display: flex; align-items: center; gap: .5rem; padding: .5rem .75rem; margin-bottom: var(--dxp-g-spacing-small); border-radius: 4px; background: var(--dxp-g-warning); color: var(--dxp-g-warning-contrast); font-size: .8125rem; }
 .dev .sheet { position: absolute; inset: 0; background: var(--dxp-g-root); display: flex; flex-direction: column; z-index: 30; }
-.dev-frame.tablet .dev .sheet, .dev-frame.mobile.landscape .dev .sheet { left: auto; width: 380px; box-shadow: -6px 0 18px rgba(0,0,0,.25); }
 .dev .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.35); z-index: 25; }
 .dev .split { display: flex; flex: 1; min-height: 0; }
 .dev .rail { width: 240px; flex: none; border-right: 1px solid var(--dxp-g-neutral-1); background: var(--dxp-g-neutral); overflow-y: auto; display: flex; flex-direction: column; }
@@ -946,10 +915,50 @@ body.device { background: #e9ecf1; min-height: 100vh; }
 .dev .trow .num.neg { color: var(--dxp-g-destructive); font-weight: 700; }
 .dev .stepper button:disabled, .dev .stepper input:disabled { opacity: .45; cursor: not-allowed; background: var(--dxp-g-neutral); }
 .dev .tablet-tools { display: flex; gap: .5rem; margin-bottom: var(--dxp-g-spacing-small); } .dev .tablet-tools > * { flex: 1; }
+
+/* ============================================================
+   Responsive views — switched by viewport width in pure CSS.
+   Desktop grid >= 1280 | Tablet split 640-1279 | Phone stacked < 640
+   (JS renders all three from the same data; CSS decides which one is visible.)
+   ============================================================ */
+:root { --bar-h: 44px; }
+html.embedded { --bar-h: 0px; }
+html.embedded .mock-bar { display: none; }
+#vTablet, #vPhone { display: none; height: calc(100vh - var(--bar-h)); }
+#desktopPage .oam-container { max-width: 1440px; margin: 0 auto; }             /* site content area is capped at 1440px */
+@media (min-width: 1441px) {
+    body { background: #f3f4f6; }
+    #desktopPage .oam-container { background: var(--dxp-g-root); min-height: calc(100vh - var(--bar-h)); box-shadow: 0 0 0 1px var(--dxp-g-neutral-1); }
+}
+@media (max-width: 1279.98px) { #desktopPage { display: none; } }
+@media (min-width: 640px) and (max-width: 1279.98px) { #vTablet { display: block; } }
+@media (max-width: 639.98px) { #vPhone { display: block; } }
+#vTablet .dev .sheet { left: auto; width: 380px; box-shadow: -6px 0 18px rgba(0,0,0,.25); }
+@media (min-width: 1000px) and (max-width: 1279.98px) {
+    #vTablet .dev .rail { width: 280px; }
+    #vTablet .dev .sheet { width: 420px; }
+}
+/* phone held sideways: short screen, so the tablet split layout is tightened up */
+@media (min-width: 640px) and (max-width: 1279.98px) and (max-height: 500px) {
+    #vTablet .dev .rail { width: 210px; }
+    #vTablet .dev .appbar { padding: .3rem var(--dxp-g-spacing-small); }
+    #vTablet .dev .footer { display: flex; align-items: center; gap: .75rem; padding: .4rem var(--dxp-g-spacing-small); }
+    #vTablet .dev .footer .hint { margin: 0; flex: 1; }
+    #vTablet .dev .footer .row { flex: none; width: 330px; }
+    #vTablet .dev .sitecard { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; padding: .5rem .75rem; margin-bottom: .5rem; }
+    #vTablet .dev .sitecard > div:first-child { flex: 1; }
+    #vTablet .dev .sitecard .meta { display: none; }
+    #vTablet .dev .sitecard .slds-button { line-height: 1.75rem; padding: 0 .6rem; order: 2; }
+    #vTablet .dev .sitecard .totals { order: 3; width: 100%; margin-top: 0; }
+    #vTablet .dev .tablet-tools .slds-input, #vTablet .dev .tablet-tools .slds-select { height: 1.75rem; line-height: 1.75rem; }
+    #vTablet .dev .tablet-tools { margin-bottom: .35rem; }
+    #vTablet .dev .scroll { padding-top: .35rem; padding-bottom: .35rem; }
+    #vTablet .dev .over, #vTablet .dev .lockb { padding: .3rem .6rem; margin-bottom: .35rem; }
+    #vTablet .dev .tgrid { grid-template-columns: 1fr 56px 56px 150px; }
+    #vTablet .dev .stepper button { width: 36px; height: 36px; }
+    #vTablet .dev .stepper input { height: 36px; width: 46px; }
+}
 .mock-bar a.demo-link:link, .mock-bar a.demo-link:visited, .mock-bar a.demo-link:hover, .mock-bar a.demo-link:focus { color: #fff; text-decoration: underline; margin-right: .25rem; }
-.mock-seg { display: inline-flex; border: 1px solid #5a7fb0; border-radius: 4px; overflow: hidden; }
-.mock-seg button { background: transparent; color: #fff; border: 0; padding: .2rem .75rem; font-size: .8125rem; cursor: pointer; }
-.mock-seg button.on { background: #fff; color: #032d60; font-weight: 600; }
 
 #overBanner .slds-icon { fill: var(--dxp-g-destructive-contrast); }  /* site CSS turns icons in scoped notifications grey */
 .search-wrapper .slds-form-element { margin-bottom: 0; }  /* site CSS gives form elements 16px bottom margin */
@@ -957,6 +966,7 @@ body.device { background: #e9ecf1; min-height: 100vh; }
 .icon-over-allocated { margin-right: var(--dxp-g-spacing-xxsmall); vertical-align: middle; display: inline-flex; }
 .site-name-row svg, .site-controls svg { vertical-align: middle; }
 </style>
+<script>if (window.parent !== window) document.documentElement.classList.add('embedded');</script>
 </head>
 <body>
 <svg aria-hidden="true" style="display:none" xmlns="http://www.w3.org/2000/svg">
@@ -974,22 +984,17 @@ body.device { background: #e9ecf1; min-height: 100vh; }
 <symbol viewBox="0 0 520 520"  id="u-success" xmlns="http://www.w3.org/2000/svg"><path d="M260 20a240 240 0 100 480 240 240 0 100-480m134 180L241 355c-6 6-16 6-22 0l-84-85c-6-6-6-16 0-22l22-22c6-6 16-6 22 0l44 45a10 10 0 0015 0l112-116c6-6 16-6 22 0l22 22c7 6 7 16 0 23"/></symbol>
 <symbol viewBox="0 0 520 520"  id="u-add" xmlns="http://www.w3.org/2000/svg"><path d="M300 290h165c8 0 15-7 15-15v-30c0-8-7-15-15-15H300c-6 0-10-4-10-10V55c0-8-7-15-15-15h-30c-8 0-15 7-15 15v165c0 6-4 10-10 10H55c-8 0-15 7-15 15v30c0 8 7 15 15 15h165c6 0 10 4 10 10v165c0 8 7 15 15 15h30c8 0 15-7 15-15V300c0-6 4-10 10-10"/></symbol>
 </svg>
-<div class="mock-bar"><a class="demo-link" href="index.html">← Manage Orders</a> <strong>Demo</strong> · static mock data · Step 2 of 2 · layout:
-    <span class="mock-seg" id="layoutSeg" title="Preview the layout at each breakpoint"><button data-layout="desktop" class="on">Desktop</button><button data-layout="tablet">Tablet</button><button data-layout="mobile">Mobile</button></span>
-    <span class="mock-seg" id="orientSeg" hidden><button data-orient="portrait" class="on">Portrait</button><button data-orient="landscape">Landscape</button></span>
-    <label id="fitLabel" hidden><input type="checkbox" id="fitToggle" checked> Fit to window</label>
+<div class="mock-bar"><a class="demo-link" href="orders.html">← Manage Orders</a> <strong>Demo</strong> · static mock data · Step 2 of 2 · layout follows the window width (open <code>index.html</code> for the device frames)
     <label><input type="checkbox" id="lockToggle"> Amplify lock (read-only)</label>
     <label><input type="checkbox" id="confirmAll"> Confirm all allocations</label>
     <select id="lockReason"><option>Return in progress</option><option>Adjustment in progress</option></select>
 </div>
 
-<div id="deviceWrap" hidden><div class="dev-frame mobile" id="devFrame"><div class="dev" id="dev"></div></div></div>
-
 <div class="page" id="desktopPage"><div class="oam-container">
 
     <div class="oam-page-header">
         <div class="breadcrumb">
-            <a class="breadcrumb-link" href="index.html">All Orders</a><span class="breadcrumb-sep">/</span>
+            <a class="breadcrumb-link" href="orders.html">All Orders</a><span class="breadcrumb-sep">/</span>
             <span class="breadcrumb-current">PQ 260301-100099</span>
         </div>
         <div class="bso-summary-bar" style="margin-top:0.5rem">
@@ -1063,6 +1068,9 @@ body.device { background: #e9ecf1; min-height: 100vh; }
     </div>
 
 </div></div>
+
+<div id="vTablet"><div class="dev" id="devTablet"></div></div>
+<div id="vPhone"><div class="dev" id="devPhone"></div></div>
 
 <div id="overModal" hidden>
     <section class="slds-modal slds-fade-in-open" role="alertdialog" aria-labelledby="overModalTitle" tabindex="-1">
@@ -1183,7 +1191,7 @@ function render(){
     $('submitHint').textContent=(!locked&&unconfirmedN)?`${unconfirmedN} ${unconfirmedN===1?'allocation is':'allocations are'} not confirmed`:'';
     $('submitBtn').title=unconfirmedN?'Confirm all allocations before submitting':'';
     $('count').textContent=`1–${rows.length} of ${rows.length} products${overOnly?' (over-allocated only)':''}`; $('pageLabel').textContent='Page 1 of 1';
-    if (typeof dv !== 'undefined' && dv.layout !== 'desktop') renderDevice();
+    if (typeof dv !== 'undefined') renderDevice();
 }
 
 function renderDrawer(){
@@ -1237,10 +1245,9 @@ $('confirmAll').addEventListener('change',e=>{ sites.forEach(s=>{ s.status=e.tar
 let n=4; $('addSite').onclick=()=>{ const id='s'+n; sites.push({id,name:'Site '+n,status:'In Progress',editable:true,configured:false}); n++; activeId=id; render(); renderDrawer(); };  // new site opens straight into Site Details
 
 // ============================================================
-// Device layouts (Tablet / Mobile). Same data and state as the desktop table.
+// Tablet / Phone views. Same data and state as the desktop grid; CSS decides which is visible.
 // ============================================================
-const dv = { orient: 'portrait', layout: 'desktop', menu: false, site: 's1', mode: 'site', search: '', prog: '', open: new Set(), sheet: null };
-const dSplit = () => dv.layout === 'tablet' || dv.orient === 'landscape';   // phone in landscape uses the split layout too
+const dv = { menu: false, site: 's1', mode: 'site', search: '', prog: '', open: new Set(), sheet: null };
 const dEd = s => s.editable && !locked;
 const dLeft = p => p.available - distributed(p);
 const dUnconf = () => sites.filter(s => s.status !== 'Confirmed').length;
@@ -1256,20 +1263,20 @@ const dAlerts = () => {
     const over = n ? `<div class="over">${ico('warning', 'slds-icon_x-small')}<span><b>${n} product${n > 1 ? 's are' : ' is'} over-allocated.</b></span><button class="slds-button slds-button_neutral" data-d-overtoggle>${overOnly ? 'Show all' : 'Show'}</button></div>` : '';
     return lock + over;
 };
-const dAppbar = sub => `<div class="appbar"><a class="slds-button slds-button_icon" aria-label="Back to all orders" href="index.html"><svg class="slds-button__icon" aria-hidden="true"><use href="#u-chevronleft"></use></svg></a><div class="title">PQ 260301-100099<span class="sub">${sub}</span></div><span class="badge" style="background:#e3f0ff;color:var(--dxp-g-brand)">Open</span></div>`;
+const dAppbar = sub => `<div class="appbar"><a class="slds-button slds-button_icon" aria-label="Back to all orders" href="orders.html"><svg class="slds-button__icon" aria-hidden="true"><use href="#u-chevronleft"></use></svg></a><div class="title">PQ 260301-100099<span class="sub">${sub}</span></div><span class="badge" style="background:#e3f0ff;color:var(--dxp-g-brand)">Open</span></div>`;
 const dFooter = () => { const u = dUnconf(), off = locked || u > 0; return `<div class="footer">${(!locked && u) ? `<div class="hint">${u} ${u === 1 ? 'allocation is' : 'allocations are'} not confirmed</div>` : ''}<div class="row"><button class="slds-button slds-button_neutral" ${locked ? 'disabled' : ''}>Save Draft</button><button class="slds-button slds-button_brand" data-d-submit ${off ? 'disabled' : ''}>Submit Order</button></div></div>`; };
 const dSiteCard = s => `<div class="sitecard"><div style="display:flex;justify-content:space-between;align-items:center"><span class="name">${s.name}</span>${dBadge(s)}</div>
     <div class="meta">${s.configured ? '123 Main St, Springfield, IL · Sarah Johnson' : ico('warning', 'slds-icon_xx-small slds-icon-text-warning') + ' Missing shipping address'}</div>
     <button class="slds-button slds-button_neutral" data-d-sheet="${s.id}">${ico('settings', 'slds-button__icon')} ${locked ? 'View site details' : 'Edit site details'}</button>
     <div class="totals"><span><b>${dTotal(s.id)}</b> units</span><span><b>${PRODUCTS.filter(p => (q[p.id + '-' + s.id] || 0) > 0).length}</b> of ${PRODUCTS.length} products</span></div></div>`;
-const dTools = () => `<div class="${dv.layout === 'tablet' ? 'tablet-tools' : 'tools'}"><div class="slds-form-element__control slds-input-has-icon slds-input-has-icon_left">${ico('search', 'slds-input__icon slds-input__icon_left slds-icon-text-default')}<input class="slds-input" data-d-search placeholder="Search products" value="${dv.search}"></div>
+const dTools = split => `<div class="${split ? 'tablet-tools' : 'tools'}"><div class="slds-form-element__control slds-input-has-icon slds-input-has-icon_left">${ico('search', 'slds-input__icon slds-input__icon_left slds-icon-text-default')}<input class="slds-input" data-d-search placeholder="Search products" value="${dv.search}"></div>
     <div class="slds-select_container"><select class="slds-select" data-d-prog><option value="">All Programs</option>${[...new Set(PRODUCTS.map(p => p.program))].map(x => `<option ${dv.prog === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div></div>`;
-const dSheet = () => {
+const dSheet = split => {
     const s = sites.find(x => x.id === dv.sheet); if (!s) return '';
     const dis = locked ? 'disabled' : '';
     const f = (l, v = '', t = 'text') => `<div class="slds-form-element"><label class="slds-form-element__label">${l}</label><div class="slds-form-element__control"><input class="slds-input" type="${t}" value="${v}" ${dis}></div></div>`;
     const sel = (l, o) => `<div class="slds-form-element"><label class="slds-form-element__label">${l}</label><div class="slds-form-element__control"><div class="slds-select_container"><select class="slds-select" ${dis}>${o.map(x => `<option>${x}</option>`).join('')}</select></div></div></div>`;
-    return `${dSplit() ? '<div class="scrim" data-d-close></div>' : ''}<div class="sheet"><div class="appbar"><button class="slds-button slds-button_icon" data-d-close aria-label="Close"><svg class="slds-button__icon" aria-hidden="true"><use href="#u-close"></use></svg></button><div class="title">Site Details<span class="sub">${s.name}</span></div>${dBadge(s)}</div>
+    return `${split ? '<div class="scrim" data-d-close></div>' : ''}<div class="sheet"><div class="appbar"><button class="slds-button slds-button_icon" data-d-close aria-label="Close"><svg class="slds-button__icon" aria-hidden="true"><use href="#u-close"></use></svg></button><div class="title">Site Details<span class="sub">${s.name}</span></div>${dBadge(s)}</div>
     <div class="scroll form">${f('Display Name', s.name)}${sel('Shipping Address', ['Lincoln Elementary — 123 Main St, Springfield, IL 62701'])}
     <div class="sec">Delivery contact</div>${sel('Ship To Contact', ['Sarah Johnson'])}${f('Phone', '217-555-0101', 'tel')}
     <div class="sec">Delay delivery</div><p class="hintp">Enter a date if delivery should not begin before a specific date.</p>${f('Do Not Deliver Before', '', 'date')}
@@ -1282,77 +1289,77 @@ function dMobile() {
     const s = dSite(), rows = dFiltered();
     const menu = dv.menu ? `<div class="menu" role="listbox">${sites.length > 8 ? '<div class="msearch"><input class="slds-input" placeholder="Find a site"></div>' : ''}${sites.map(x => `<div class="mitem ${x.id === dv.site ? 'on' : ''}" role="option" data-d-site="${x.id}">${dDot(x)}<span class="nm">${x.name}<span class="sub">${x.status}${x.configured ? '' : ' · missing address'}</span></span><span class="u">${dTotal(x.id)} units</span>${x.id === dv.site ? ico('check', 'slds-icon_x-small slds-icon-text-success') : ''}</div>`).join('')}${locked ? '' : `<div class="mitem" data-d-add>${ico('add', 'slds-icon_x-small slds-icon-text-default')}<span class="nm">Add site</span></div>`}</div>` : '';
     const body = dv.mode === 'site'
-        ? `<div class="sitepick"><button class="pickbtn" data-d-menu aria-haspopup="listbox" aria-expanded="${dv.menu}">${dDot(s)}<span class="nm">${s.name}</span><span class="of">${sites.indexOf(s) + 1} of ${sites.length}</span>${ico('chevrondown', 'slds-icon_x-small slds-icon-text-default')}</button>${menu}</div>${dSiteCard(s)}${dTools()}
+        ? `<div class="sitepick"><button class="pickbtn" data-d-menu aria-haspopup="listbox" aria-expanded="${dv.menu}">${dDot(s)}<span class="nm">${s.name}</span><span class="of">${sites.indexOf(s) + 1} of ${sites.length}</span>${ico('chevrondown', 'slds-icon_x-small slds-icon-text-default')}</button>${menu}</div>${dSiteCard(s)}${dTools(false)}
            ${rows.map(p => `<div class="prow"><div class="info"><div class="pname">${p.name}</div><div class="pmeta">${p.program} · ${p.isbn}</div><div class="left ${dLeft(p) < 0 ? 'neg' : ''}">${dLeft(p) < 0 ? 'Over by ' + (-dLeft(p)) : dLeft(p) + ' left of ' + p.available}</div></div>${dStepper(p, s, isOver(p))}</div>`).join('') || '<p class="hintp">No products match.</p>'}`
         : dFiltered().map(p => { const d = distributed(p), open = dv.open.has(p.id), pct = Math.min(100, 100 * d / Math.max(1, p.available)); return `<div class="pcard ${isOver(p) ? 'err' : ''}"><div class="phead" data-d-open="${p.id}"><div class="info"><div class="pname">${p.name}</div><div class="left ${isOver(p) ? 'neg' : ''}">${isOver(p) ? 'Over by ' + (-dLeft(p)) : d + ' of ' + p.available + ' assigned'}</div><div class="bar ${isOver(p) ? 'err' : ''}"><i style="width:${pct}%"></i></div></div><svg class="slds-icon slds-icon_x-small slds-icon-text-default" style="${open ? 'transform:rotate(180deg)' : ''}"><use href="#u-chevrondown"></use></svg></div>${open ? `<div class="pbody">${sites.map(x => `<div class="srow"><span class="sn">${x.name}${x.status === 'Confirmed' ? ' <span class="badge b-conf">Confirmed</span>' : ''}</span>${dStepper(p, x, isOver(p))}</div>`).join('')}</div>` : ''}</div>`; }).join('');
-    return `${dAppbar('Customer Quote Q-900099')}<div class="scroll">${dAlerts()}<div class="seg"><button data-d-mode="site" class="${dv.mode === 'site' ? 'on' : ''}">By site</button><button data-d-mode="product" class="${dv.mode === 'product' ? 'on' : ''}">By product</button></div>${body}</div>${dFooter()}${dSheet()}`;
+    return `${dAppbar('Customer Quote Q-900099')}<div class="scroll">${dAlerts()}<div class="seg"><button data-d-mode="site" class="${dv.mode === 'site' ? 'on' : ''}">By site</button><button data-d-mode="product" class="${dv.mode === 'product' ? 'on' : ''}">By product</button></div>${body}</div>${dFooter()}${dSheet(false)}`;
 }
 function dTablet() {
     const s = dSite(), rows = dFiltered();
     const rail = `<div class="rail"><div class="rh">Sites (${sites.length})</div>${sites.map(x => `<div class="ritem ${x.id === dv.site ? 'on' : ''}" data-d-site="${x.id}">${dDot(x)}<span class="nm">${x.name}<span class="sub">${x.status}${x.configured ? '' : ' · missing address'}</span></span><span class="u">${dTotal(x.id)}</span></div>`).join('')}${locked ? '' : `<button class="slds-button slds-button_neutral radd" data-d-add>+ Add Site</button>`}</div>`;
-    const pane = `<div class="pane"><div class="scroll">${dSiteCard(s)}${dTools()}
+    const pane = `<div class="pane"><div class="scroll">${dSiteCard(s)}${dTools(true)}
         <div class="tgrid thead"><span>Product</span><span style="text-align:right">Available</span><span style="text-align:right">Left</span><span style="text-align:center">Assigned</span></div>
         ${rows.map(p => `<div class="tgrid trow"><div><div class="pname">${p.name}</div><div class="pmeta">${p.program} · ${p.isbn}</div></div><span class="num">${p.available}</span><span class="num ${dLeft(p) < 0 ? 'neg' : ''}">${dLeft(p)}</span>${dStepper(p, s, isOver(p))}</div>`).join('') || '<p class="hintp">No products match.</p>'}</div></div>`;
-    return `${dAppbar('Customer Quote Q-900099 · Amplify ELA, Burst, CKLA')}<div style="padding:var(--dxp-g-spacing-small) var(--dxp-g-spacing-medium) 0">${dAlerts()}</div><div class="split">${rail}${pane}</div>${dFooter()}${dSheet()}`;
+    return `${dAppbar('Customer Quote Q-900099 · Amplify ELA, Burst, CKLA')}<div style="padding:var(--dxp-g-spacing-small) var(--dxp-g-spacing-medium) 0">${dAlerts()}</div><div class="split">${rail}${pane}</div>${dFooter()}${dSheet(true)}`;
 }
 function renderDevice() {
-    if (dv.layout === 'desktop') return;
-    $('dev').innerHTML = dSplit() ? dTablet() : dMobile();
+    $('devTablet').innerHTML = dTablet();
+    $('devPhone').innerHTML = dMobile();
 }
-function setLayout(l) {
-    dv.layout = l; dv.menu = false; dv.sheet = null;
-    const device = l !== 'desktop';
-    $('desktopPage').hidden = device; $('deviceWrap').hidden = !device; document.body.classList.toggle('device', device);
-    $('devFrame').className = 'dev-frame ' + (l === 'tablet' ? 'tablet ' : 'mobile ') + dv.orient;
-    $('orientSeg').hidden = !device; $('fitLabel').hidden = !device;
-    document.querySelectorAll('#layoutSeg button').forEach(b => b.classList.toggle('on', b.dataset.layout === l));
-    if (!dv.open.size) { const o = PRODUCTS.find(isOver); if (o) dv.open.add(o.id); }
-    render(); fitDevice();
-}
-// Scale the device frame down to fit the preview window (CSS zoom keeps layout and text crisp)
-function fitDevice() {
-    const f = $('devFrame'); if (!f || dv.layout === 'desktop') return;
-    f.style.zoom = 1;
-    if (!$('fitToggle').checked) return;
-    const w = f.offsetWidth, h = f.offsetHeight, barH = document.querySelector('.mock-bar').offsetHeight;
-    f.style.zoom = Math.min(1, (window.innerWidth - 48) / w, (window.innerHeight - barH - 48) / h);
-}
-window.addEventListener('resize', fitDevice);
-$('fitToggle').addEventListener('change', fitDevice);
-$('orientSeg').addEventListener('click', e => { const b = e.target.closest('[data-orient]'); if (!b) return; dv.orient = b.dataset.orient; dv.sheet = null; document.querySelectorAll('#orientSeg button').forEach(x => x.classList.toggle('on', x === b)); setLayout(dv.layout); });
 const dAttr = (t, n) => t.hasAttribute('data-d-' + n) ? t.getAttribute('data-d-' + n) : null;
-$('layoutSeg').addEventListener('click', e => { const b = e.target.closest('[data-layout]'); if (b) setLayout(b.dataset.layout); });
-$('dev').addEventListener('click', e => {
-    const t = e.target.closest('[data-d-inc],[data-d-dec],[data-d-site],[data-d-open],[data-d-overtoggle],[data-d-sheet],[data-d-menu],[data-d-mode],[data-d-add],[data-d-close],[data-d-confirm],[data-d-submit]');
-    if (!t) { if (dv.menu && !e.target.closest('.menu')) { dv.menu = false; renderDevice(); } return; }
-    let v;
-    if ((v = dAttr(t, 'menu')) !== null) { dv.menu = !dv.menu; renderDevice(); return; }
-    if ((v = dAttr(t, 'site')) !== null) { dv.site = v; dv.menu = false; }
-    else if ((v = dAttr(t, 'mode')) !== null) dv.mode = v;
-    else if ((v = dAttr(t, 'open')) !== null) { dv.open.has(v) ? dv.open.delete(v) : dv.open.add(v); }
-    else if (dAttr(t, 'overtoggle') !== null) overOnly = !overOnly;
-    else if ((v = dAttr(t, 'sheet')) !== null) dv.sheet = v;
-    else if (dAttr(t, 'close') !== null) dv.sheet = null;
-    else if ((v = dAttr(t, 'confirm')) !== null) { const s = sites.find(x => x.id === v); if (s) s.status = 'Confirmed'; dv.sheet = null; }
-    else if (dAttr(t, 'add') !== null) { const id = 's' + n; sites.push({ id, name: 'Site ' + n, status: 'In Progress', editable: true, configured: false }); n++; dv.site = id; dv.sheet = id; dv.menu = false; }
-    else if (dAttr(t, 'submit') !== null) { const k = PRODUCTS.filter(isOver).length; if (k) { $('overModalText').innerHTML = overMessage(k); $('overModal').hidden = false; } return; }
-    else if ((v = dAttr(t, 'inc')) !== null || (v = dAttr(t, 'dec')) !== null) {
-        const [pid, sid] = v.split('|'), key = pid + '-' + sid, cur = q[key] || 0;
-        if (dAttr(t, 'inc') !== null) { if (cur < maxFor(pid, sid)) q[key] = cur + 1; } else if (cur > 0) q[key] = cur - 1;
-    }
-    render();
-});
-$('dev').addEventListener('change', e => {
-    if (e.target.matches('[data-d-in]')) { const [pid, sid] = e.target.getAttribute('data-d-in').split('|'); q[pid + '-' + sid] = Math.max(0, parseFloat(e.target.value) || 0); render(); }
-    else if (e.target.matches('[data-d-prog]')) { dv.prog = e.target.value; render(); }
-});
-$('dev').addEventListener('input', e => {
-    if (!e.target.matches('[data-d-search]')) return;
-    dv.search = e.target.value.trim().toLowerCase(); const pos = e.target.selectionStart; render();
-    const el = document.querySelector('#dev [data-d-search]'); if (el) { el.focus(); el.setSelectionRange(pos, pos); }
-});
+function bindDev(el) {
+    el.addEventListener('click', e => {
+        const t = e.target.closest('[data-d-inc],[data-d-dec],[data-d-site],[data-d-open],[data-d-overtoggle],[data-d-sheet],[data-d-menu],[data-d-mode],[data-d-add],[data-d-close],[data-d-confirm],[data-d-submit]');
+        if (!t) { if (dv.menu && !e.target.closest('.menu')) { dv.menu = false; renderDevice(); } return; }
+        let v;
+        if ((v = dAttr(t, 'menu')) !== null) { dv.menu = !dv.menu; renderDevice(); return; }
+        if ((v = dAttr(t, 'site')) !== null) { dv.site = v; dv.menu = false; }
+        else if ((v = dAttr(t, 'mode')) !== null) dv.mode = v;
+        else if ((v = dAttr(t, 'open')) !== null) { dv.open.has(v) ? dv.open.delete(v) : dv.open.add(v); }
+        else if (dAttr(t, 'overtoggle') !== null) overOnly = !overOnly;
+        else if ((v = dAttr(t, 'sheet')) !== null) dv.sheet = v;
+        else if (dAttr(t, 'close') !== null) dv.sheet = null;
+        else if ((v = dAttr(t, 'confirm')) !== null) { const s = sites.find(x => x.id === v); if (s) s.status = 'Confirmed'; dv.sheet = null; }
+        else if (dAttr(t, 'add') !== null) { const id = 's' + n; sites.push({ id, name: 'Site ' + n, status: 'In Progress', editable: true, configured: false }); n++; dv.site = id; dv.sheet = id; dv.menu = false; }
+        else if (dAttr(t, 'submit') !== null) { const k = PRODUCTS.filter(isOver).length; if (k) { $('overModalText').innerHTML = overMessage(k); $('overModal').hidden = false; } return; }
+        else if ((v = dAttr(t, 'inc')) !== null || (v = dAttr(t, 'dec')) !== null) {
+            const [pid, sid] = v.split('|'), key = pid + '-' + sid, cur = q[key] || 0;
+            if (dAttr(t, 'inc') !== null) { if (cur < maxFor(pid, sid)) q[key] = cur + 1; } else if (cur > 0) q[key] = cur - 1;
+        }
+        render();
+    });
+    el.addEventListener('change', e => {
+        if (e.target.matches('[data-d-in]')) { const [pid, sid] = e.target.getAttribute('data-d-in').split('|'); q[pid + '-' + sid] = Math.max(0, parseFloat(e.target.value) || 0); render(); }
+        else if (e.target.matches('[data-d-prog]')) { dv.prog = e.target.value; render(); }
+    });
+    el.addEventListener('input', e => {
+        if (!e.target.matches('[data-d-search]')) return;
+        dv.search = e.target.value.trim().toLowerCase(); const pos = e.target.selectionStart; render();
+        const box = el.querySelector('[data-d-search]'); if (box) { box.focus(); box.setSelectionRange(pos, pos); }
+    });
+}
+bindDev($('devTablet')); bindDev($('devPhone'));
+{ const o = PRODUCTS.find(isOver); if (o) dv.open.add(o.id); }   // By product starts with the problem product open
 
-render(); renderDrawer();
+// ---- Embedded in the demo shell (index.html): report layout, accept test-switch commands ----
+const EMBEDDED = window.parent !== window;
+function currentView() {
+    const shown = id => getComputedStyle($(id)).display !== 'none';
+    return shown('desktopPage') ? 'Desktop grid' : shown('vTablet') ? 'Tablet split' : 'Phone stacked';
+}
+function reportLayout() { if (EMBEDDED) parent.postMessage({ src: 'oam', type: 'layout', page: 'manager', view: currentView(), w: window.innerWidth, h: window.innerHeight }, '*'); }
+window.addEventListener('resize', reportLayout);
+window.addEventListener('message', e => {
+    const m = e.data; if (!m || m.src !== 'oam-shell') return;
+    if (m.type === 'query') { reportLayout(); return; }
+    if (m.type !== 'set') return;
+    const box = { lock: 'lockToggle', confirmAll: 'confirmAll' }[m.key];
+    if (box) { $(box).checked = !!m.value; $(box).dispatchEvent(new Event('change')); }
+    else if (m.key === 'lockReason') { $('lockReason').value = m.value; $('lockReason').dispatchEvent(new Event('change')); }
+});
+if (EMBEDDED) parent.postMessage({ src: 'oam', type: 'ready', page: 'manager' }, '*');
+
+render(); renderDrawer(); reportLayout();
 </script>
 </body>
 </html>

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Manage Orders — Order Allocation Manager demo</title>
+<!-- Site stylesheets, downloaded from the Amplify Customer Portal LWR site (see assets/site-styles) -->
+<link rel="stylesheet" href="assets/site-styles/salesforce-lightning-design-system.min.css">
+<link rel="stylesheet" href="assets/site-styles/dxp-site-spacing-styling-hooks.min.css">
+<link rel="stylesheet" href="assets/site-styles/dxp-styling-hooks.min.css">
+<link rel="stylesheet" href="assets/site-styles/site-theme.css"><!-- runtime branding variables the live site injects -->
+<link rel="stylesheet" href="assets/site-styles/dxp-slds-extensions.min.css">
+<style>
+    [hidden] { display: none !important; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--dxp-g-root); font-family: var(--dxp-g-root-font-family); color: var(--dxp-g-root-contrast); }
+
+    /* Mockup-only control: stands in for the Experience Builder property */
+    .mock-bar { background: #032d60; color: #fff; padding: 0.5rem 1.25rem; font-size: 0.8125rem; display: flex; align-items: center; gap: 0.75rem; }
+    .mock-bar select { font-size: 0.8125rem; padding: 0.15rem 0.4rem; color: #181818; background: #fff; }
+
+    .oam-container { padding: var(--dxp-g-spacing-medium) var(--dxp-g-spacing-large); background: var(--dxp-g-root); max-width: 1440px; margin: 0 auto; min-height: calc(100vh - var(--bar-h)); }   /* site content area is capped at 1440px */
+    .oam-page-header { margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid #e0e0e0; }
+
+    /* Toolbar (card mode only) */
+    .toolbar { display: flex; gap: var(--dxp-g-spacing-small); align-items: center; margin-bottom: var(--dxp-g-spacing-small); }
+    .toolbar .search-wrapper { width: 260px; }
+    .toolbar .filter-wrapper { width: 200px; }
+    .toolbar .search-wrapper .slds-form-element { margin-bottom: 0; }  /* site CSS gives form elements 16px bottom margin */
+    .toolbar .filter-wrapper .slds-select_container { display: block; }
+    .toolbar .count { margin-left: auto; font-size: 0.75rem; color: #706e6b; }
+
+    /* Status badges (same as component) */
+    .status-badge { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+    .status-open        { background: #e3f0ff; color: var(--dxp-g-brand); }
+    .status-draft       { background: #f3f2f2; color: #706e6b; }
+    .status-submitted   { background: #e8f5e0; color: #2e7d32; }
+    .status-in-progress { background: #fff3e0; color: #e65100; }
+    .status-confirmed   { background: #efe8fc; color: #5c35cc; }
+    .status-cancelled   { background: #fce8e8; color: var(--dxp-g-destructive); }
+
+    /* ---------- Kanban ---------- */
+    .kanban { display: flex; gap: 0.75rem; align-items: flex-start; overflow-x: auto; padding-bottom: 0.5rem; }
+    .kanban-col { flex: 1 1 0; min-width: 260px; background: #f3f2f2; border-radius: 6px; border-top: 3px solid var(--col-color); display: flex; flex-direction: column; max-height: calc(100vh - 230px); }
+    .kanban-col-header { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 0.75rem; }
+    .kanban-col-title { font-weight: 700; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.04em; color: #3e3e3c; }
+    .kanban-col-count { background: #fff; border: 1px solid var(--dxp-g-neutral-1); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 0 0.5rem; color: #444; }
+    .kanban-col-body { padding: 0 0.5rem 0.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+    .kanban-more { text-align: center; font-size: 0.75rem; color: #706e6b; padding: 0.25rem 0 0.5rem; }
+    .kanban-empty { text-align: center; font-size: 0.75rem; color: #a8a8a8; padding: 1.25rem 0.5rem; border: 1px dashed #c9c7c5; border-radius: 6px; }
+
+    .order-card { background: #fff; border: 1px solid var(--dxp-g-neutral-1); border-radius: 6px; padding: 0.75rem; box-shadow: 0 1px 2px rgba(0,0,0,.06); transition: box-shadow .1s, border-color .1s; }
+    .order-card:hover { box-shadow: 0 2px 6px rgba(0,0,0,.12); border-color: #c9c7c5; }
+    .card-pq a.pqlink:link, .card-pq a.pqlink:visited, .card-pq a.pqlink:hover, .card-pq a.pqlink:focus,
+    .bso-pq-number a.pqlink:link, .bso-pq-number a.pqlink:visited, .bso-pq-number a.pqlink:hover, .bso-pq-number a.pqlink:focus { color: inherit; text-decoration: none; }   /* site link rule is a:link:not(...) so match its pseudo-classes */
+    .card-pq a.pqlink:hover, .bso-pq-number a.pqlink:hover { text-decoration: underline; }
+    .mock-bar a.demo-link:link, .mock-bar a.demo-link:visited, .mock-bar a.demo-link:hover, .mock-bar a.demo-link:focus { margin-left: auto; color: #fff; text-decoration: underline; }
+    .card-pq { font-weight: 600; font-size: 0.9375rem; color: var(--dxp-g-brand); }
+    /* A program list can hold up to 4 comma-separated programs: one chip each, wrapping */
+    .card-programs { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.375rem; }
+    .card-program { font-size: 0.6875rem; color: #444; background: #f3f2f2; border-radius: 4px; padding: 0.1rem 0.4rem; white-space: nowrap; }
+    .card-fields { margin: 0.625rem 0 0.75rem; display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.75rem; font-size: 0.75rem; }
+    .card-fields dt { color: #706e6b; font-weight: 600; }
+    .card-fields dd { margin: 0; color: var(--dxp-g-root-contrast); }
+    .card-footer { display: flex; justify-content: flex-end; }
+    /* Amplify-side lock: order stays visible, customer sees why it is read-only */
+    .order-card.is-locked { border-left: 3px solid #e65100; }
+    .order-card .lock-notice { margin-top: var(--dxp-g-spacing-xsmall); font-size: 0.75rem; line-height: 1.35; }
+    .bso-item.is-locked { border-left: 4px solid #e65100; border-bottom: 1px solid #f3f2f2; }
+    .bso-item.is-locked .bso-row { border-bottom: none; }
+
+    /* ---------- Table mode (existing, abbreviated) ---------- */
+    .program-group { border: 1px solid var(--dxp-g-neutral-1); border-radius: 6px; overflow: hidden; margin-bottom: 0.75rem; }
+    .program-group-header { display: flex; gap: 0.5rem; padding: 0.75rem 1rem; background: #f3f2f2; border-bottom: 1px solid #dddbda; }
+    .program-name { flex: 1; font-weight: 600; font-size: 0.9375rem; }
+    .order-count { font-size: 0.75rem; color: #706e6b; }
+    .bso-row { display: flex; align-items: center; gap: 1.25rem; padding: 0.875rem 1rem; border-bottom: 1px solid #f3f2f2; }
+    .bso-info { flex: 1; }
+    .bso-pq-number { font-weight: 600; font-size: 0.9375rem; color: var(--dxp-g-brand); margin-bottom: 0.25rem; }
+    .bso-meta { font-size: 0.75rem; color: #706e6b; }
+    .bso-status-area { min-width: 110px; text-align: center; }
+
+    /* ============================================================
+       Responsive layout — pure CSS, switched by viewport width
+       Desktop >= 1280: four columns | Tablet 640-1279: two-up | Phone < 640: one column with status tabs
+       ============================================================ */
+    :root { --bar-h: 44px; }
+    html.embedded { --bar-h: 0px; }
+    html.embedded .mock-bar { display: none; }
+    @media (min-width: 1441px) {
+        body { background: #f3f4f6; }
+        .oam-container { box-shadow: 0 0 0 1px var(--dxp-g-neutral-1); }
+    }
+    .status-tabs { display: none; }
+    @media (min-width: 640px) and (max-width: 1279.98px) {
+        .kanban { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
+        .kanban-col { min-width: 0; max-height: none; }
+    }
+    @media (max-width: 639.98px) {
+        .oam-container { padding: var(--dxp-g-spacing-small) var(--dxp-g-spacing-medium); }
+        .toolbar { flex-wrap: wrap; }
+        .toolbar .search-wrapper, .toolbar .filter-wrapper { width: 100%; }
+        .toolbar .count { margin-left: 0; width: 100%; }
+        .status-tabs { display: flex; gap: .25rem; margin-bottom: var(--dxp-g-spacing-small); }
+        .status-tabs input { position: absolute; opacity: 0; pointer-events: none; }
+        .status-tabs label { flex: 1; text-align: center; padding: .5rem .25rem; border: 1px solid var(--dxp-g-neutral-2); border-radius: 6px; font-size: .75rem; cursor: pointer; line-height: 1.2; }
+        .status-tabs label .n { display: block; font-weight: 700; font-size: .875rem; }
+        .status-tabs input:checked + label { background: var(--dxp-g-brand); border-color: var(--dxp-g-brand); color: var(--dxp-g-brand-contrast); }
+        .status-tabs input:focus-visible + label { outline: 2px solid var(--dxp-g-brand); outline-offset: 2px; }
+        .kanban { display: block; overflow: visible; }
+        .kanban-col { display: none; min-width: 0; max-height: none; }
+        #cardMode:has(#stab-Open:checked)       .kanban-col[data-col="Open"],
+        #cardMode:has(#stab-Submitted:checked)  .kanban-col[data-col="Submitted"],
+        #cardMode:has(#stab-Processing:checked) .kanban-col[data-col="Processing"],
+        #cardMode:has(#stab-Shipped:checked)    .kanban-col[data-col="Shipped"] { display: flex; }
+        .bso-row { flex-wrap: wrap; gap: .5rem; }
+        .bso-info { flex-basis: 100%; }
+        .bso-status-area { flex: 1; text-align: left; min-width: 0; }
+        .bso-meta { white-space: normal; }
+    }
+
+    .hidden { display: none; }
+    .note { margin-top: 1rem; font-size: 0.75rem; color: #706e6b; }
+</style>
+<script>if (window.parent !== window) document.documentElement.classList.add('embedded');</script>
+</head>
+<body>
+<svg aria-hidden="true" style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol viewBox="0 0 520 520"  id="u-search" xmlns="http://www.w3.org/2000/svg"><path d="M496 453L362 320a189 189 0 10-340-92 190 190 0 00298 135l133 133a14 14 0 0021 0l21-21a17 17 0 001-22M210 338a129 129 0 11130-130 129 129 0 01-130 130"/></symbol>
+<symbol viewBox="0 0 520 520"  id="u-lock" xmlns="http://www.w3.org/2000/svg"><path d="M110 190h40c6 0 10-3 10-9v-1A100 100 0 01267 80c53 4 93 50 93 104v-3c0 6 4 9 10 9h40c6 0 10-3 10-9v-1A160 160 0 00252 20c-85 4-150 76-152 161 1 5 5 9 10 9m-10-9v4zm360 89a40 40 0 00-40-40H100a40 40 0 00-40 40v190a40 40 0 0040 40h320a40 40 0 0040-40zM306 427c2 6-3 13-10 13h-73c-7 0-11-6-10-13l18-60a48 48 0 01-21-48 50 50 0 0139-38c32-6 60 17 60 47 0 16-8 31-21 39z"/></symbol>
+</svg>
+
+<div class="mock-bar">
+    <strong>Demo</strong> · static mock data · Step 1 of 2 · layout follows the window width (open <code>index.html</code> for the device frames) · <code>displayMode</code> property:
+    <select id="modeSelect">
+        <option value="Card" selected>Card</option>
+        <option value="Table">Table</option>
+    </select>
+    <a class="demo-link" href="manager.html">Skip to the Allocation Manager →</a>
+</div>
+
+<div class="oam-container">
+    <div class="oam-page-header">
+        <h1 class="slds-text-heading_large">Manage Orders</h1>
+        <p class="slds-text-body_regular slds-m-top_x-small">Select an Amplify Price Quote to view and manage your allocation quantities.</p>
+    </div>
+
+    <!-- SHARED TOOLBAR (both modes) -->
+    <div class="toolbar">
+        <div class="search-wrapper"><div class="slds-form-element"><div class="slds-form-element__control slds-input-has-icon slds-input-has-icon_left"><svg class="slds-icon slds-input__icon slds-input__icon_left slds-icon-text-default" aria-hidden="true"><use href="#u-search"></use></svg><input class="slds-input" type="search" id="searchBox" placeholder="Search by PQ, quote, or PO..."></div></div></div>
+        <div class="filter-wrapper"><div class="slds-select_container"><select class="slds-select" id="programFilter"><option value="">All Programs</option></select></div></div>
+        <span class="count" id="resultCount"></span>
+    </div>
+
+    <!-- CARD MODE -->
+    <div id="cardMode">
+        <div class="status-tabs" role="radiogroup" aria-label="Order status">
+            <input type="radio" name="stab" id="stab-Open" checked><label for="stab-Open">Open<span class="n" id="tabn-Open"></span></label>
+            <input type="radio" name="stab" id="stab-Submitted"><label for="stab-Submitted">Submitted<span class="n" id="tabn-Submitted"></span></label>
+            <input type="radio" name="stab" id="stab-Processing"><label for="stab-Processing">Processing<span class="n" id="tabn-Processing"></span></label>
+            <input type="radio" name="stab" id="stab-Shipped"><label for="stab-Shipped">Shipped<span class="n" id="tabn-Shipped"></span></label>
+        </div>
+        <div class="kanban" id="kanban"></div>
+    </div>
+
+    <!-- TABLE MODE (current behavior) -->
+    <div id="tableMode" class="hidden"></div>
+
+    <p class="note">Cards are grouped into Open, Submitted, Processing and Shipped columns; Cancelled requests are excluded. Each program is shown as its own tag on the card. Cards are not draggable — status is driven by the order lifecycle, not by user action. In this demo every button and order number opens the Allocation Manager.</p>
+</div>
+
+<script>
+    // Column rules (request status + the related order's shipment status):
+    //   Cancelled                                  -> excluded
+    //   Open                                       -> Open
+    //   Submitted                                  -> Submitted
+    //   Received / Processed / any Sync* (incl. Sync Error) -> Processing. Raw sync state is internal and never shown to customers.
+    //   Any non-Cancelled, non-Open request whose BSO has a Shipment Status -> Shipped
+    const STATUSES = [
+        { key: 'Open',       color: 'var(--dxp-g-brand)', cls: 'status-open' },
+        { key: 'Submitted',  color: '#2e7d32', cls: 'status-submitted' },
+        { key: 'Processing', color: '#e65100', cls: 'status-in-progress' },
+        { key: 'Shipped',    color: '#5c35cc', cls: 'status-confirmed' },
+    ];
+    const column = o => {
+        if (o.status === 'Cancelled') return null;
+        if (o.status === 'Open') return 'Open';
+        if (o.shipmentStatus) return 'Shipped';
+        return o.status === 'Submitted' ? 'Submitted' : 'Processing';
+    };
+    // Modeled on real order data: Program is comma-separated, up to 4 programs / 40 chars
+    const SHIP = 'tracking-available';   // any non-empty value marks the BSO as having a shipment status
+    const ALL_ORDERS = [
+        { pq: 'PQ 260301-100001', cq: 'Q-900001', po: 'DEMO-0001', program: 'CKLA',                                      status: 'Open',           end: '2026-06-30', allocs: 2, mod: '2026-10-03' },
+        { pq: 'PQ 260301-100002', cq: 'Q-900002', po: 'DEMO-0002',         program: 'Amplify Science',                           lockReason: 'Return in progress', status: 'Open',           end: '2026-08-15', allocs: 4, mod: '2026-10-04' },
+        { pq: 'PQ 260301-100003', cq: 'Q-900003', po: null,          program: 'Amplify ELA,Burst,CKLA,mCLASS',             lockReason: 'Adjustment in progress', status: 'Open',           end: '2026-05-31', allocs: 6, mod: '2026-09-20' },
+        { pq: 'PQ 260301-100004', cq: 'Q-900004', po: 'DEMO-0004',    program: 'Amplify ELA,Amplify Math,Amplify Science',  status: 'Submitted',      end: '2026-09-01', allocs: 3, mod: '2026-10-01' },
+        { pq: 'PQ 260301-100005', cq: 'Q-900005', po: 'DEMO-0005',        program: 'Amplify Math,Desmos Math',                  status: 'Submitted',      end: '2026-10-31', allocs: 2, mod: '2026-09-28' },
+        { pq: 'PQ 260301-100006', cq: 'Q-900006', po: 'DEMO-0006',        program: 'Amplify Science',                           status: 'Received',       end: '2026-11-30', allocs: 1, mod: '2026-09-25' },
+        { pq: 'PQ 260301-100007', cq: 'Q-900002', po: 'DEMO-0007',        program: 'Amplify ELA',                               status: 'Sync In Progress', end: '2026-12-31', allocs: 5, mod: '2026-09-30' },
+        { pq: 'PQ 260301-100008', cq: 'Q-900008', po: 'DEMO-0008',     program: 'Amplify ELA,CKLA,mCLASS',                   status: 'Sync Completed', end: '2026-07-31', shipmentStatus: SHIP, allocs: 3, mod: '2026-10-02' },
+        { pq: 'PQ 260301-100009', cq: 'Q-900009', po: 'DEMO-0009',        program: 'Amplify Science',                           status: 'Sync Completed', end: '2026-12-15', shipmentStatus: SHIP, allocs: 2, mod: '2026-09-29' },
+        { pq: 'PQ 260301-100010', cq: 'Q-900010', po: 'DEMO-0010',          program: 'Amplify Math',                              status: 'Cancelled',      end: '2026-03-01', allocs: 1, mod: '2026-03-02' },
+    ];
+    // Extra historical Shipped orders so the 10-card cap is visible in the mockup
+    for (let i = 0; i < 10; i++) {
+        ALL_ORDERS.push({ pq: `PQ 260301-${100011 + i}`, cq: `Q-${900011 + i}`, po: `DEMO-${String(11 + i).padStart(4, '0')}`, program: i % 3 ? 'Amplify Science' : 'Amplify ELA,CKLA',
+            status: 'Sync Completed', shipmentStatus: SHIP, end: '2026-06-30', allocs: 1 + (i % 4), mod: `2026-08-${String(20 - i).padStart(2, '0')}` });
+    }
+    const ORDERS = ALL_ORDERS.filter(o => column(o)).map(o => ({ ...o, col: column(o) }));
+    const cls = s => (STATUSES.find(x => x.key === s) || {}).cls || 'status-draft';
+    const programsOf = o => o.program.split(',').map(p => p.trim());
+
+    const programSel = document.getElementById('programFilter');
+    [...new Set(ORDERS.flatMap(programsOf))].sort().forEach(p => programSel.add(new Option(p, p)));
+
+    const COLUMN_LIMIT = 10;
+
+    // Same search + program filter drives both modes
+    function filteredOrders() {
+        const term = document.getElementById('searchBox').value.trim().toLowerCase();
+        const prog = programSel.value;
+        return ORDERS.filter(o =>
+            (!prog || programsOf(o).includes(prog)) &&
+            (!term || [o.pq, o.cq, o.po].some(v => (v || '').toLowerCase().includes(term))));
+    }
+
+    function render() {
+        const rows = filteredOrders();
+        document.getElementById('resultCount').textContent = `${rows.length} of ${ORDERS.length} orders`;
+        renderCards(rows);
+        renderTable(rows);
+    }
+
+    const ico = (n,cls='') => `<svg class="slds-icon ${cls}" aria-hidden="true"><use href="#u-${n}"></use></svg>`;
+    const lockMessage = o => `<b>${o.lockReason}.</b> Amplify is updating this order, so it is read-only for now.`;
+
+    const actionButton = o => o.col === 'Shipped'
+        ? `<a class="slds-button slds-button_brand" href="manager.html">Track Shipment</a>`
+        : o.lockReason
+            ? '<a class="slds-button slds-button_neutral" href="manager.html">View Order</a>'
+            : '<a class="slds-button slds-button_brand" href="manager.html">Manage Order</a>';
+
+    function renderCards(rows) {
+        STATUSES.forEach(s => { document.getElementById('tabn-' + s.key).textContent = rows.filter(o => o.col === s.key).length; });
+        document.getElementById('kanban').innerHTML = STATUSES.map(s => {
+            // Future enhancement: a "Show all" destination. For now each column shows the 10 most recently modified.
+            const all = rows.filter(o => o.col === s.key).sort((a, b) => b.mod.localeCompare(a.mod));
+            const cards = all.slice(0, COLUMN_LIMIT);
+            return `
+            <div class="kanban-col" data-col="${s.key}" style="--col-color:${s.color}">
+                <div class="kanban-col-header">
+                    <span class="kanban-col-title">${s.key}</span>
+                    <span class="kanban-col-count">${all.length}</span>
+                </div>
+                <div class="kanban-col-body">
+                    ${cards.length ? cards.map(o => `
+                    <div class="order-card${o.lockReason ? ' is-locked' : ''}">
+                        <div class="card-pq"><a class="pqlink" href="manager.html">${o.pq}</a></div>
+                        <div class="card-programs">${programsOf(o).map(p => `<span class="card-program">${p}</span>`).join('')}</div>
+                        ${o.lockReason ? `<div class="lock-notice slds-scoped-notification slds-media slds-media_center slds-theme_warning" role="status"><div class="slds-media__figure">${ico('lock','slds-icon_x-small slds-icon-text-default')}</div><div class="slds-media__body">${lockMessage(o)}</div></div>` : ''}
+                        <dl class="card-fields">
+                            <dt>Customer Quote</dt><dd>${o.cq}</dd>
+                            <dt>PO</dt><dd>${o.po || '—'}</dd>
+                            <dt>Allocations</dt><dd>${o.allocs}</dd>
+                            <dt>End Date</dt><dd>${o.end}</dd>
+                        </dl>
+                        <div class="card-footer">${actionButton(o)}</div>
+                    </div>`).join('') : '<div class="kanban-empty">No orders</div>'}
+                    ${all.length > COLUMN_LIMIT ? `<div class="kanban-more">Showing ${COLUMN_LIMIT} most recent of ${all.length}</div>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderTable(rows) {
+        const groups = rows.reduce((a, o) => ((a[o.program] ||= []).push(o), a), {});
+        document.getElementById('tableMode').innerHTML = Object.entries(groups).map(([p, os]) => `
+            <div class="program-group">
+                <div class="program-group-header"><span class="program-name">▾ ${p}</span><span class="order-count">${os.length} order(s)</span></div>
+                ${os.map(o => `
+                <div class="bso-item${o.lockReason ? ' is-locked' : ''}">
+                <div class="bso-row">
+                    <div class="bso-info"><div class="bso-pq-number"><a class="pqlink" href="manager.html">${o.pq}</a></div>
+                        <div class="bso-meta"><b>Customer Quote:</b> ${o.cq} • <b>PO:</b> ${o.po || '—'} • <b>End Date:</b> ${o.end} • <b>Allocations:</b> ${o.allocs}</div></div>
+                    <div class="bso-status-area"><span class="status-badge ${cls(o.col)}">${o.col}</span></div>
+                    ${actionButton(o)}
+                </div>
+                ${o.lockReason ? `<div class="slds-notify slds-notify_alert slds-alert_warning" role="alert"><span class="slds-icon_container slds-m-right_x-small">${ico('lock','slds-icon_x-small slds-icon-text-default')}</span><h2>${lockMessage(o)}</h2></div>` : ''}
+                </div>`).join('')}
+            </div>`).join('') || '<div class="kanban-empty">No orders match your search</div>';
+    }
+
+    document.getElementById('modeSelect').addEventListener('change', e => {
+        const card = e.target.value === 'Card';
+        document.getElementById('cardMode').classList.toggle('hidden', !card);
+        document.getElementById('tableMode').classList.toggle('hidden', card);
+    });
+    document.getElementById('searchBox').addEventListener('input', render);
+    programSel.addEventListener('change', render);
+
+    render();
+
+    // ---- Embedded in the demo shell (index.html): report layout, accept the Card/Table switch ----
+    const EMBEDDED = window.parent !== window;
+    function currentView() {
+        if (document.getElementById('cardMode').classList.contains('hidden')) return 'Table';
+        if (getComputedStyle(document.querySelector('.status-tabs')).display !== 'none') return 'Cards · status tabs';
+        return window.innerWidth < 1280 ? 'Cards · two-up' : 'Cards · four columns';
+    }
+    function reportLayout() { if (EMBEDDED) parent.postMessage({ src: 'oam', type: 'layout', page: 'orders', view: currentView(), w: window.innerWidth, h: window.innerHeight }, '*'); }
+    window.addEventListener('resize', reportLayout);
+    document.getElementById('modeSelect').addEventListener('change', reportLayout);
+    window.addEventListener('message', e => {
+        const m = e.data; if (!m || m.src !== 'oam-shell') return;
+        if (m.type === 'query') { reportLayout(); return; }
+        if (m.type !== 'set' || m.key !== 'displayMode') return;
+        const sel = document.getElementById('modeSelect'); sel.value = m.value; sel.dispatchEvent(new Event('change'));
+    });
+    if (EMBEDDED) parent.postMessage({ src: 'oam', type: 'ready', page: 'orders' }, '*');
+    reportLayout();
+</script>
+</body>
+</html>
